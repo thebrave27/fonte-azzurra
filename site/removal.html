@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contatti / Rimozione - Fonte Azzurra</title>
+<style>
+  body { background-color: #032B56; color: #ffffff; font-family: 'Montserrat', sans-serif; padding:20px; }
+  h1 { color:#ffffff; }
+  label, input, textarea { display:block; margin-bottom:10px; width:100%; }
+  input, textarea { padding:8px; border-radius:5px; border:none; }
+  button { background-color:#A9CCE3; color:#032B56; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; }
+</style>
+</head>
+<body>
+<h1>Modulo Contatti / Rimozione</h1>
+<p>Se desideri richiedere la rimozione di un contenuto o contattarci, compila il modulo sottostante:</p>
+<form action="mailto:premiataforneria1926@gmail.com" method="post" enctype="text/plain">
+  <label>Nome:</label>
+  <input type="text" name="nome" required>
+  <label>Email:</label>
+  <input type="email" name="email" required>
+  <label>Messaggio:</label>
+  <textarea name="messaggio" rows="5" required></textarea>
+  <button type="submit">Invia</button>
+</form>
+</body>
+</html>
