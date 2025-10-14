@@ -10,26 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout del repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      # Install dependencies
       - name: Install dependencies
         run: pip install feedparser
 
-      # Esegui aggregator.py
-      - name: Run aggregator
+      - name: Esegui aggregator.py
         run: python aggregator.py
 
-      # Commit e push con PAT
-      - name: Commit and push with PAT
+      - name: Commit e push direttamente su main
         run: |
           git config --global user.name "GitHub Actions"
-          git config --global user.email "action"
+          git config --global user.email "actions@github.com"
+          git checkout main
+          git add index.html feed.json
+          git diff --cached --quiet || git commit -m 'Aggiornamento automatico articoli'
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git main
