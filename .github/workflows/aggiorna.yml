@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout del repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -28,7 +28,7 @@ jobs:
       - name: Esegui aggregator.py
         run: python aggregator.py
 
-      # 5️⃣ Verifica PAT_TOKEN
+      # 5️⃣ Verifica che PAT_TOKEN sia presente
       - name: Verifica PAT_TOKEN
         run: |
           if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
@@ -52,6 +52,6 @@ jobs:
             echo "Nessuna modifica da committare"
           else
             git commit -m 'Aggiornamento automatico articoli'
-            # Push usando il PAT direttamente nell'URL
+            # PUSH usando il PAT direttamente nell'URL
             git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git main
           fi
