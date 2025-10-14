@@ -23,10 +23,10 @@ for key, url in feeds.items():
         })
 
 # Salva feed JSON per Zapier/Make
-with open("site/feed.json", "w", encoding="utf-8") as f:
+with open("feed.json", "w", encoding="utf-8") as f:
     json.dump(articles, f, ensure_ascii=False, indent=2)
 
-# Genera HTML automatico per site/index.html
+# Genera HTML automatico per index.html
 html_content = ""
 for art in articles:
     html_content += f"""
@@ -37,10 +37,10 @@ for art in articles:
     </article>
     """
 
-with open("site/index.html", "r", encoding="utf-8") as f:
+with open("index.html", "r", encoding="utf-8") as f:
     template = f.read()
 
 template = template.replace("<!-- Gli articoli saranno generati automaticamente dallo script Python -->", html_content)
 
-with open("site/index.html", "w", encoding="utf-8") as f:
+with open("index.html", "w", encoding="utf-8") as f:
     f.write(template)
