@@ -32,4 +32,36 @@ jobs:
       - name: Commit e push su branch aggiornamento-articoli
         run: |
           git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.co
+          git config --global user.email "actions@github.com"
+
+          # Crea o passa al branch temporaneo
+          git checkout -B aggiornamento-articoli
+
+          # Aggiunge i file modificati
+          git add index.html feed.json
+
+          # Commette solo se ci sono modifiche
+          git diff --cached --quiet || git commit -m 'Aggiornamento automatico articoli'
+
+          # Push del branch usando il PAT salvato come secret
+          git push --force --set-upstream https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git aggiornamento-articoli
+
+      # 6️⃣ Chiudi eventuali PR precedenti aperte dallo stesso branch
+      - name: Chiudi PR precedenti
+        uses: peter-evans/close-pull-requests@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          author: "github-actions[bot]"
+          base: main
+          head: aggiornamento-articoli
+          comment: 'Chiusura automatica per aggiornamento successivo'
+
+      # 7️⃣ Crea una nuova Pull Request verso main
+      - name: Crea Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          branch: aggiornamento-articoli
+          base: main
+          title: 'Aggiornamento automatico articoli'
+          body: 'Aggiornamento automatico dei feed e del sito generato da GitHub Actions'
