@@ -32,4 +32,4 @@ jobs:
       - name: Commit and push with PAT
         run: |
           git config --global user.name "GitHub Actions"
-          git config --global user.email "action
+          git config --global user.email "action"
