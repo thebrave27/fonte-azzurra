@@ -32,20 +32,4 @@ jobs:
       - name: Commit and push with PAT
         run: |
           git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git checkout -B aggiornamento-articoli
-          git add index.html feed.json
-          git diff --cached --quiet || git commit -m 'Aggiornamento automatico articoli'
-
-          # Qui il PAT viene passato direttamente nell'URL, evitando il bot
-          git push --force --set-upstream https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git aggiornamento-articoli
-
-      # Crea o aggiorna Pull Request
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          branch: aggiornamento-articoli
-          base: main
-          title: 'Aggiornamento automatico articoli'
-          body: 'Aggiornamento automatico dei feed e del sito generato da GitHub Actions'
+          git config --global user.email "action"
