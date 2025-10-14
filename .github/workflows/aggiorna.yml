@@ -28,7 +28,7 @@ jobs:
       - name: Esegui aggregator.py
         run: python aggregator.py
 
-      # 5️⃣ Configura Git e push usando PAT
+      # 5️⃣ Configura Git, commit e push usando PAT
       - name: Commit e push su branch aggiornamento-articoli
         run: |
           git config --global user.name "GitHub Actions"
