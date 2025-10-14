@@ -2,7 +2,7 @@ name: Aggiorna Fonte Azzurra
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # ogni 6 ore
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -46,17 +46,7 @@ jobs:
           # Push del branch usando il PAT salvato come secret
           git push --force --set-upstream https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git aggiornamento-articoli
 
-      # 6️⃣ Chiudi eventuali PR precedenti aperte dallo stesso branch
-      - name: Chiudi PR precedenti
-        uses: peter-evans/close-pull-requests@v2
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          author: "github-actions[bot]"
-          base: main
-          head: aggiornamento-articoli
-          comment: 'Chiusura automatica per aggiornamento successivo'
-
-      # 7️⃣ Crea una nuova Pull Request verso main
+      # 6️⃣ Crea o aggiorna la Pull Request verso main
       - name: Crea Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
