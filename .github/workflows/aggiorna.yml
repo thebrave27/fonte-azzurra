@@ -6,27 +6,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Checkout del repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
+      # 3️⃣ Installare le dipendenze
       - name: Install dependencies
         run: pip install feedparser
 
+      # 4️⃣ Eseguire lo script aggregator.py
       - name: Esegui aggregator.py
         run: python aggregator.py
 
-      - name: Configura Git e push
+      # 5️⃣ Configurare Git e push dei cambiamenti
+      - name: Commit e push automatico
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
+
+          # Aggiunge i file modificati
           git add index.html feed.json
-          git commit -m "Aggiornamento automatico articoli" || echo "No changes to commit"
+
+          # Commette solo se ci sono cambiamenti
+          git diff --cached --quiet || git commit -m "Aggiornamento automatico articoli"
+
+          # Push usando il token predefinito
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/thebrave27/fonte-azzurra.git
