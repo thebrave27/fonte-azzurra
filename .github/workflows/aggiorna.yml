@@ -2,56 +2,50 @@ name: Aggiorna Fonte Azzurra
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # ogni 6 ore
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
-  update-main:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout del repository
+      # Checkout del repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Python
+      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      # 3️⃣ Install dependencies
+      # Install dependencies
       - name: Install dependencies
         run: pip install feedparser
 
-      # 4️⃣ Esegui aggregator.py
-      - name: Esegui aggregator.py
+      # Esegui aggregator.py
+      - name: Run aggregator
         run: python aggregator.py
 
-      # 5️⃣ Verifica che PAT_TOKEN sia presente
-      - name: Verifica PAT_TOKEN
-        run: |
-          if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
-            echo "ERRORE: PAT_TOKEN non trovato!"
-            exit 1
-          else
-            echo "PAT_TOKEN presente, pronto per il push."
-          fi
-
-      # 6️⃣ Commit e push su main solo se ci sono modifiche
-      - name: Commit e push su main
+      # Commit e push con PAT
+      - name: Commit and push with PAT
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-
-          git checkout main
+          git checkout -B aggiornamento-articoli
           git add index.html feed.json
+          git diff --cached --quiet || git commit -m 'Aggiornamento automatico articoli'
 
-          # Controlla se ci sono modifiche
-          if git diff --cached --quiet; then
-            echo "Nessuna modifica da committare"
-          else
-            git commit -m 'Aggiornamento automatico articoli'
-            # PUSH usando il PAT direttamente nell'URL
-            git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git main
-          fi
+          # Qui il PAT viene passato direttamente nell'URL, evitando il bot
+          git push --force --set-upstream https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git aggiornamento-articoli
+
+      # Crea o aggiorna Pull Request
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          branch: aggiornamento-articoli
+          base: main
+          title: 'Aggiornamento automatico articoli'
+          body: 'Aggiornamento automatico dei feed e del sito generato da GitHub Actions'
