@@ -28,16 +28,11 @@ jobs:
       - name: Esegui aggregator.py
         run: python aggregator.py
 
-      # 5️⃣ Commit e push su branch temporaneo usando PAT
+      # 5️⃣ Commit e push su branch aggiornamento-articoli usando PAT
       - name: Commit e push
         run: |
-         git config --global user.name "GitHub Actions"
-         git config --global user.email "actions@github.com"
-         git checkout -B aggiornamento-articoli
-         git add index.html feed.json
-         git diff --cached --quiet || git commit -m 'Aggiornamento automatico articoli'
-         git push --force --set-upstream https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git aggiornamento-articoli
-
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
 
           # Crea o passa al branch temporaneo
           git checkout -B aggiornamento-articoli
@@ -48,7 +43,7 @@ jobs:
           # Commette solo se ci sono modifiche
           git diff --cached --quiet || git commit -m 'Aggiornamento automatico articoli'
 
-          # Push del branch usando il PAT salvato come secret
+          # Push del branch usando il PAT
           git push --force --set-upstream https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/thebrave27/fonte-azzurra.git aggiornamento-articoli
 
       # 6️⃣ Crea o aggiorna la Pull Request verso main
