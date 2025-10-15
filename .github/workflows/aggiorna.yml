@@ -26,7 +26,7 @@ jobs:
 
       # Esegui lo script
       - name: Run aggregator
-        run: python site/aggregator.py
+        run: python aggregator.py
 
       # Commit e push dei file aggiornati
       - name: Commit and push changes
