@@ -37,10 +37,23 @@ for art in articles:
     </article>
     """
 
+# Aggiungi data aggiornamento in fondo alla pagina
+now = datetime.now().strftime("%d/%m/%Y %H:%M")
+html_content += f"""
+  <p style='text-align:center; margin-top:30px; font-size:0.9em; color:#A9CCE3;'>
+    🕒 Ultimo aggiornamento: {now}
+  </p>
+"""
+
+# Inserisci gli articoli nel template HTML
 with open("index.html", "r", encoding="utf-8") as f:
     template = f.read()
 
-template = template.replace("<!-- Gli articoli saranno generati automaticamente dallo script Python -->", html_content)
+template = template.replace(
+    "<!-- Gli articoli saranno generati automaticamente dallo script Python -->",
+    html_content
+)
 
+# Salva il nuovo file HTML
 with open("index.html", "w", encoding="utf-8") as f:
     f.write(template)
