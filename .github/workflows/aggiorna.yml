@@ -13,6 +13,8 @@ jobs:
       # Checkout del repository
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
       # Setup Python
       - name: Setup Python
@@ -24,17 +26,17 @@ jobs:
       - name: Install dependencies
         run: pip install feedparser requests
 
-      # Esegui lo script
+      # Esegui lo script di aggregazione
       - name: Run aggregator
         run: python aggregator.py
 
-      # Commit e push dei file aggiornati
+      # Commit e push dei file aggiornati (incluso storico.json)
       - name: Commit and push changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add index.html feed.json
+          git add index.html feed.json storico.json || true
           git commit -m "Aggiornamento automatico comunicati SSC Napoli" || echo "Nessuna modifica da commitare"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
