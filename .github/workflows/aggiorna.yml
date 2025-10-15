@@ -2,7 +2,7 @@ name: Aggiorna Fonte Azzurra
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */6 * * *'  # Ogni 6 ore
   workflow_dispatch:
 
 jobs:
@@ -22,14 +22,19 @@ jobs:
 
       # Install dependencies
       - name: Install dependencies
-        run: pip install feedparser
+        run: pip install feedparser requests
 
-      # Esegui aggregator.py
+      # Esegui lo script
       - name: Run aggregator
-        run: python aggregator.py
+        run: python site/aggregator.py
 
-      # Commit e push con PAT
-      - name: Commit and push with PAT
+      # Commit e push dei file aggiornati
+      - name: Commit and push changes
         run: |
           git config --global user.name "GitHub Actions"
-          git config --global user.email "action"
+          git config --global user.email "actions@github.com"
+          git add index.html feed.json
+          git commit -m "Aggiornamento automatico comunicati SSC Napoli" || echo "Nessuna modifica da commitare"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
