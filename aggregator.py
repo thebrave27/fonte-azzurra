@@ -7,7 +7,7 @@ import re
 
 # --- Configurazione Corretta ---
 URL_FEED_AZZURRA = "https://www.fonteazzurra.it/feed/"
-FALLBACK_URL = "https://sscnapoli.it/news/" # <--- NUOVO URL DI FALLBACK SU /news/
+FALLBACK_URL = "https://sscnapoli.it/news/"
 MAX_ARTICLES = 10
 FEED_JSON_PATH = 'feed.json'
 INDEX_HTML_PATH = 'index.html'
@@ -60,37 +60,63 @@ def scraping_fallback():
         # Aggiungo un header User-Agent per rendere la richiesta più simile a un browser
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         response = requests.get(FALLBACK_URL, headers=headers)
-        response.raise_for_status() # Solleva un'eccezione per errori HTTP
+        response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Selettore ancora più generale per trovare i contenitori degli articoli
-        # Si assume che gli articoli siano in un <div> o <article> che ha una classe
+        # --- LOGICA DI SCRAPING AGGIORNATA PER /NEWS/ ---
+        
+        # 1. Trova i contenitori degli articoli (potrebbero essere card, list-item, etc.)
+        # Provo a usare selettori più specifici che ho trovato su quella pagina:
         article_containers = soup.find_all(
-            ['div', 'article'], 
-            class_=re.compile(r'comunicati-item|article-item|news-item|post')
+            ['div'], 
+            class_=re.compile(r'elementor-post__card|post-card|news-item|post')
         )
         
         if not article_containers:
-            print("❌ Errore nello scraping: Nessun contenitore articolo trovato con selettori comuni.")
-            return articles
+            print("❌ Errore nello scraping: Nessun contenitore articolo trovato con selettori comuni. Riprovo con selettore generico.")
+            # Riprova con un selettore più generico (a volte è solo un <div> con un link)
+            article_containers = soup.select('div.elementor-posts-container article')
+            
+            if not article_containers:
+                print("❌ Errore nello scraping: Fallito anche il selettore generico.")
+                return articles
+
 
         for item in article_containers[:MAX_ARTICLES]:
-            a_tag = item.find('a', href=True) # Cerca un tag <a> con un attributo href valido
+            
+            # 2. Estrai il link e il titolo dal tag <a> principale
+            # Si assume che il link principale sia quello che contiene il titolo
+            a_tag = item.find('a', href=True)
             if not a_tag:
-                continue
+                # Se non c'è un <a> diretto, cerco un <a> che racchiuda l'intero articolo
+                a_tag = item.select_one('a[href]')
+                if not a_tag:
+                    continue
             
             link = a_tag['href']
             
-            # Ricerca flessibile del titolo (H2, H3, H5 o span)
-            title_tag = item.find(['h2', 'h3', 'h5', 'span'], class_=re.compile(r'com-title|title|post-title|news-title'))
-            title = title_tag.get_text().strip() if title_tag else "Senza titolo"
+            # 3. Estrai il titolo: spesso il titolo è in un H2, H3 o H4
+            title_tag = item.find(['h2', 'h3', 'h4'], class_=re.compile(r'title|post-title|news-title'))
             
-            # Ricerca flessibile della data
-            date_tag = item.find(['span', 'p'], class_=re.compile(r'com-data|date|article-date|post-date'))
+            # Se il titolo non è in Hx, lo cerco nel testo del tag <a> (soluzione di fallback finale)
+            if not title_tag:
+                title = a_tag.get_text().strip()
+                # Rimuovi eventuali spazi bianchi o newline indesiderati
+                title = re.sub(r'\s+', ' ', title).strip()
+            else:
+                title = title_tag.get_text().strip()
+                title = re.sub(r'\s+', ' ', title).strip()
+
+            if not title or title.lower() == 'leggi tutto':
+                 title = "Senza titolo (Estratto dal link)"
+
+
+            # 4. Estrai la data
+            date_tag = item.find(['span', 'div', 'time', 'p'], class_=re.compile(r'date|article-date|post-date|meta-date'))
             date_str = date_tag.get_text().strip() if date_tag else ""
             
             # Estrazione del formato data gg/mm/aaaa
-            date_match = re.search(r'\d{2}/\d{2}/\d{4}', date_str)
+            date_match = re.search(r'\d{1,2}/\d{1,2}/\d{4}', date_str)
             formatted_date = date_match.group(0) if date_match else ""
 
             articles.append({
