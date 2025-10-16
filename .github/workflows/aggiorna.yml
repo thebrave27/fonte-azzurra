@@ -9,24 +9,19 @@ on:
 
 jobs:
   update-main:
-    # Permessi necessari per il checkout, e per il push con un PAT se necessario, 
-    # o per il push diretto con GITHUB_TOKEN se si usano i permessi di default (actions: write)
-    # Ho impostato 'contents: write' che spesso è sufficiente, ma ho lasciato l'uso del PAT 
-    # perché lo usi nel codice originale. Se PAT_TOKEN non è necessario, puoi rimuoverlo 
-    # e usare 'actions/checkout@v3' con il token predefinito.
+    # Permessi necessari per scrivere i file aggiornati nel repository
     permissions:
       contents: write 
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        # Usa v4 che è l'ultima versione stabile
         uses: actions/checkout@v4 
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          # Usa una versione specifica per maggiore stabilità, ad es. 3.11
+          # Versione di Python stabile
           python-version: '3.11' 
 
       - name: Install dependencies
@@ -40,18 +35,6 @@ jobs:
           set -e
           python aggregator.py
 
-      # --- Verifica PAT_TOKEN (Opzionale, puoi rimuoverlo se non necessario) ---
-      # Il controllo può essere mantenuto, ma l'errore di sintassi era nello step successivo.
-      - name: Verifica PAT_TOKEN
-        # Aggiungo un controllo più pulito in caso il PAT non sia necessario
-        run: |
-          if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
-            echo "Attenzione: secrets.PAT_TOKEN non trovato. Verrà usato il token predefinito di GitHub."
-          else
-            echo "PAT_TOKEN presente. Pronto per il push con token personale."
-          fi
-      
-      # --- Commit e push su main (CORREZIONE PRINCIPALE) ---
       - name: Commit e push su main
         run: |
           set -e
@@ -59,22 +42,22 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           
-          # Aggiungi i file modificati
+          # Aggiungi i file che lo script dovrebbe aver modificato
           git add index.html feed.json
           
           # Controlla se ci sono modifiche da committare
           if ! git diff --cached --quiet; then
+            # Aggiunto [skip ci] per evitare loop infiniti di workflow
             git commit -m 'Aggiornamento automatico articoli [skip ci]'
             
-            # Utilizza il PAT_TOKEN se definito, altrimenti usa il GITHUB_TOKEN predefinito.
-            # Questo è un miglioramento per rendere l'azione più robusta.
+            # Logica di push: usa PAT_TOKEN se definito, altrimenti usa GITHUB_TOKEN predefinito (più semplice)
             if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
-              # Push con PAT (come nel tuo codice originale)
+              # Push con PAT (se hai bisogno di un token più potente)
               git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git main
             else
-              # Push con GITHUB_TOKEN predefinito (richiede permissions: contents: write)
+              # Push con GITHUB_TOKEN predefinito (richiede permissions: contents: write sopra)
               git push
-            fi
+            fi 
             echo "Modifiche committate e pushati."
           else
             echo "Nessuna modifica da committare o pushati."
