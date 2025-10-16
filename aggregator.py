@@ -49,4 +49,23 @@ def fallback_sscnapoli():
                 date_tag = post.select_one("time")
                 
                 title = title_tag.get_text(strip=True) if title_tag else "Senza titolo"
-                link = link_tag['href'] if link_tag and link
+                link = link_tag['href'] if link_tag and link_tag.has_attr('href') else "#"
+                date = date_tag['datetime'] if date_tag and date_tag.has_attr('datetime') else None
+                
+                results.append({
+                    "title": title,
+                    "link": link,
+                    "date": date
+                })
+            except Exception as e:
+                print(f"⚠️ Errore parsing articolo: {e}")
+    except Exception as e:
+        print(f"❌ Errore nel fallback SSC Napoli: {e}")
+    return results
+
+# === ESEMPIO USO ===
+if __name__ == "__main__":
+    comunicati = fallback_sscnapoli()
+    print(f"✅ Estratti {len(comunicati)} comunicati:")
+    for c in comunicati:
+        print(f"- {c['title']} ({c['link']})")
