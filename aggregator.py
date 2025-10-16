@@ -7,7 +7,7 @@ import re
 
 # --- Configurazione Corretta ---
 URL_FEED_AZZURRA = "https://www.fonteazzurra.it/feed/"
-FALLBACK_URL = "https://sscnapoli.it/articoli/" # <--- URL 404 CORRETTO
+FALLBACK_URL = "https://sscnapoli.it/news/" # <--- NUOVO URL DI FALLBACK SU /news/
 MAX_ARTICLES = 10
 FEED_JSON_PATH = 'feed.json'
 INDEX_HTML_PATH = 'index.html'
@@ -52,35 +52,41 @@ def parse_rss():
         return None
 
 def scraping_fallback():
-    """Esegue lo scraping dei comunicati dal sito SSC Napoli (fallback)."""
-    print(f"🧩 Fallback attivo: estraggo comunicati dal sito SSC Napoli da {FALLBACK_URL}...")
+    """Esegue lo scraping degli articoli dal sito SSC Napoli (fallback)."""
+    print(f"🧩 Fallback attivo: estraggo articoli dal sito SSC Napoli da {FALLBACK_URL}...")
     articles = []
     
     try:
-        response = requests.get(FALLBACK_URL)
+        # Aggiungo un header User-Agent per rendere la richiesta più simile a un browser
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(FALLBACK_URL, headers=headers)
         response.raise_for_status() # Solleva un'eccezione per errori HTTP
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Selettore aggiornato per la struttura corrente di SSC Napoli /articoli/
-        comunicati_list = soup.find_all('div', class_=re.compile(r'comunicati-item|article-item'))
+        # Selettore ancora più generale per trovare i contenitori degli articoli
+        # Si assume che gli articoli siano in un <div> o <article> che ha una classe
+        article_containers = soup.find_all(
+            ['div', 'article'], 
+            class_=re.compile(r'comunicati-item|article-item|news-item|post')
+        )
         
-        if not comunicati_list:
-            print("❌ Errore nello scraping: Nessun elemento 'comunicati-item' o 'article-item' trovato.")
+        if not article_containers:
+            print("❌ Errore nello scraping: Nessun contenitore articolo trovato con selettori comuni.")
             return articles
 
-        for item in comunicati_list[:MAX_ARTICLES]:
-            a_tag = item.find('a')
-            if not a_tag or not a_tag.get('href'):
+        for item in article_containers[:MAX_ARTICLES]:
+            a_tag = item.find('a', href=True) # Cerca un tag <a> con un attributo href valido
+            if not a_tag:
                 continue
             
             link = a_tag['href']
             
-            # Ricerca flessibile del titolo
-            title_tag = item.find(['h2', 'h5', 'span'], class_=re.compile(r'com-title|title'))
+            # Ricerca flessibile del titolo (H2, H3, H5 o span)
+            title_tag = item.find(['h2', 'h3', 'h5', 'span'], class_=re.compile(r'com-title|title|post-title|news-title'))
             title = title_tag.get_text().strip() if title_tag else "Senza titolo"
             
             # Ricerca flessibile della data
-            date_tag = item.find(['span', 'p'], class_=re.compile(r'com-data|date|article-date'))
+            date_tag = item.find(['span', 'p'], class_=re.compile(r'com-data|date|article-date|post-date'))
             date_str = date_tag.get_text().strip() if date_tag else ""
             
             # Estrazione del formato data gg/mm/aaaa
@@ -94,7 +100,7 @@ def scraping_fallback():
                 'source': 'SSC Napoli (Fallback)'
             })
 
-        print(f"✅ Estratti {len(articles)} comunicati:")
+        print(f"✅ Estratti {len(articles)} articoli:")
         for article in articles:
             print(f"- {article['title']} ({article['link']})")
             
