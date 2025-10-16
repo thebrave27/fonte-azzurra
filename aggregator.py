@@ -43,4 +43,10 @@ def fallback_sscnapoli():
         soup = BeautifulSoup(resp.text, "html.parser")
         posts = soup.select("article")
         for post in posts[:10]:
-            title_tag = post.select_one("h2 a")
+            try:
+                title_tag = post.select_one("h2 a")
+                link_tag = post.select_one("h2 a")
+                date_tag = post.select_one("time")
+                
+                title = title_tag.get_text(strip=True) if title_tag else "Senza titolo"
+                link = link_tag['href'] if link_tag and link
