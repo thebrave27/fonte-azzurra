@@ -1,12 +1,9 @@
 import feedparser
 import json
+import requests
 from datetime import datetime
-import os
 
 print("🔵 Avvio aggiornamento Fonte Azzurra...")
-
-# Percorso assoluto (per evitare errori su GitHub Actions)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Feed ufficiali SSC Napoli
 feeds = {
@@ -15,53 +12,46 @@ feeds = {
     "radio": "https://www.radiokisskiss.it/feed/"
 }
 
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/115.0 Safari/537.36"
+}
+
 articles = []
 
 for key, url in feeds.items():
     print(f"📰 Scarico feed: {key} → {url}")
-    feed = feedparser.parse(url)
-    print(f"   ➜ {len(feed.entries)} articoli trovati")
+    try:
+        resp = requests.get(url, headers=headers, timeout=10)
+        resp.raise_for_status()
+        feed = feedparser.parse(resp.text)
+        print(f"   ➜ {len(feed.entries)} articoli trovati")
+        for entry in feed.entries:
+            articles.append({
+                "title_it": entry.title,
+                "title_en": entry.title,
+                "link": entry.link,
+                "published": entry.get("published", str(datetime.now())),
+                "source": key
+            })
+    except Exception as e:
+        print(f"   ⚠️ Errore nel download del feed {key}: {e}")
 
-    for entry in feed.entries:
-        published = entry.get("published", str(datetime.now()))
-        articles.append({
-            "title_it": entry.title,
-            "title_en": entry.title,
-            "link": entry.link,
-            "published": published,
-            "source": key
-        })
-
-# Percorsi file
-feed_path = os.path.join(BASE_DIR, "feed.json")
-storico_path = os.path.join(BASE_DIR, "storico.json")
-index_path = os.path.join(BASE_DIR, "index.html")
-
-# Carica storico precedente
-try:
-    with open(storico_path, "r", encoding="utf-8") as f:
-        storico = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    storico = []
-
-# Aggiungi solo nuovi articoli
-nuovi = [a for a in articles if a["link"] not in [s["link"] for s in storico]]
-if nuovi:
-    print(f"🆕 {len(nuovi)} nuovi articoli trovati")
-    storico.extend(nuovi)
-else:
+if not articles:
     print("⚪ Nessun nuovo articolo trovato")
+else:
+    print(f"🆕 Trovati {len(articles)} articoli totali")
 
-# Salva i file aggiornati
+# Salva feed JSON
+feed_path = "feed.json"
 with open(feed_path, "w", encoding="utf-8") as f:
     json.dump(articles, f, ensure_ascii=False, indent=2)
-
-with open(storico_path, "w", encoding="utf-8") as f:
-    json.dump(storico, f, ensure_ascii=False, indent=2)
+print(f"💾 Salvato {feed_path} con {len(articles)} articoli")
 
 # Genera HTML
 html_content = ""
-for art in sorted(storico, key=lambda x: x["published"], reverse=True):
+for art in articles:
     html_content += f"""
     <article>
       <div class='title'>{art['title_it']}</div>
@@ -70,17 +60,14 @@ for art in sorted(storico, key=lambda x: x["published"], reverse=True):
     </article>
     """
 
-# Legge template
-with open(index_path, "r", encoding="utf-8") as f:
-    template = f.read()
-
-# Inserisce contenuto
-template = template.replace(
-    "<!-- Gli articoli saranno generati automaticamente dallo script Python -->",
-    html_content
-)
-
-with open(index_path, "w", encoding="utf-8") as f:
-    f.write(template)
+try:
+    with open("index.html", "r", encoding="utf-8") as f:
+        template = f.read()
+    template = template.replace("<!-- Gli articoli saranno generati automaticamente dallo script Python -->", html_content)
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(template)
+    print("✅ index.html aggiornato con gli articoli")
+except FileNotFoundError:
+    print("⚠️ index.html non trovato – salto aggiornamento HTML")
 
 print("✅ Aggiornamento completato con successo!")
