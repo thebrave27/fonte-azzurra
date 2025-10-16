@@ -1,8 +1,25 @@
-import feedparser
+import sys
+import subprocess
+
+# Installa i moduli necessari se non presenti
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+try:
+    import feedparser
+except ModuleNotFoundError:
+    install("feedparser")
+    import feedparser
+
+try:
+    from bs4 import BeautifulSoup
+except ModuleNotFoundError:
+    install("beautifulsoup4")
+    from bs4 import BeautifulSoup
+
 import json
 import requests
 from datetime import datetime
-from bs4 import BeautifulSoup
 import os
 import urllib3
 
