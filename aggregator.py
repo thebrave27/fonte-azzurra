@@ -2,13 +2,12 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 import json
-import os
 from datetime import datetime
 import re
 
-# --- Configurazione ---
+# --- Configurazione Corretta ---
 URL_FEED_AZZURRA = "https://www.fonteazzurra.it/feed/"
-FALLBACK_URL = "https://sscnapoli.it/comunicati/"
+FALLBACK_URL = "https://sscnapoli.it/articoli/" # <--- URL 404 CORRETTO
 MAX_ARTICLES = 10
 FEED_JSON_PATH = 'feed.json'
 INDEX_HTML_PATH = 'index.html'
@@ -22,13 +21,10 @@ def parse_rss():
         for entry in feed.entries[:MAX_ARTICLES]:
             # Rimuove eventuali tag HTML dal titolo e lo pulisce
             title = BeautifulSoup(entry.title, 'html.parser').get_text().strip()
-            # Utilizza il campo 'published' o 'updated' per la data
             date_str = getattr(entry, 'published', getattr(entry, 'updated', ''))
             
-            # Formattazione della data, se presente
             if date_str:
                 try:
-                    # Tenta di analizzare la data con feedparser
                     date_obj = datetime(*entry.published_parsed[:6])
                     formatted_date = date_obj.strftime("%d/%m/%Y")
                 except Exception:
@@ -62,35 +58,32 @@ def scraping_fallback():
     
     try:
         response = requests.get(FALLBACK_URL)
-        response.raise_for_status() # Solleva un'eccezione per errori HTTP (4xx o 5xx)
+        response.raise_for_status() # Solleva un'eccezione per errori HTTP
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # NUOVO SELETTORE: Trova tutti i div che contengono il comunicato.
-        # Basato sull'analisi del sito web attuale. (Es. .comunicati-item)
-        comunicati_list = soup.find_all('div', class_=re.compile(r'comunicati-item'))
+        # Selettore aggiornato per la struttura corrente di SSC Napoli /articoli/
+        comunicati_list = soup.find_all('div', class_=re.compile(r'comunicati-item|article-item'))
         
         if not comunicati_list:
-            print("❌ Errore nello scraping: Nessun elemento 'comunicati-item' trovato.")
+            print("❌ Errore nello scraping: Nessun elemento 'comunicati-item' o 'article-item' trovato.")
             return articles
 
         for item in comunicati_list[:MAX_ARTICLES]:
-            # Trova il link (il tag 'a' all'interno del comunicato)
             a_tag = item.find('a')
             if not a_tag or not a_tag.get('href'):
                 continue
             
             link = a_tag['href']
             
-            # NUOVO SELETTORE: Trova il titolo (spesso un h5)
-            # Potrebbe essere necessario cercare un <h5> o <h2>, a seconda della struttura
+            # Ricerca flessibile del titolo
             title_tag = item.find(['h2', 'h5', 'span'], class_=re.compile(r'com-title|title'))
             title = title_tag.get_text().strip() if title_tag else "Senza titolo"
             
-            # NUOVO SELETTORE: Trova la data
-            date_tag = item.find(['span', 'p'], class_=re.compile(r'com-data|date'))
+            # Ricerca flessibile della data
+            date_tag = item.find(['span', 'p'], class_=re.compile(r'com-data|date|article-date'))
             date_str = date_tag.get_text().strip() if date_tag else ""
             
-            # Pulisce la data (es. "30/09/2024")
+            # Estrazione del formato data gg/mm/aaaa
             date_match = re.search(r'\d{2}/\d{2}/\d{4}', date_str)
             formatted_date = date_match.group(0) if date_match else ""
 
@@ -126,7 +119,6 @@ def save_to_json(data):
 def update_index_html(articles):
     """Aggiorna la sezione dei contenuti dinamici nel file index.html."""
     
-    # 1. Carica il contenuto attuale di index.html
     try:
         with open(INDEX_HTML_PATH, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -134,16 +126,12 @@ def update_index_html(articles):
         print(f"❌ Errore: {INDEX_HTML_PATH} non trovato. Impossibile aggiornare.")
         return
 
-    # 2. Prepara il nuovo contenuto HTML
     new_content_html = ""
     for article in articles:
-        # Crea un elemento <li> pulito
         new_content_html += f'<li><a href="{article["link"]}" target="_blank">{article["title"]}</a> <small>({article["date"]})</small></li>\n'
     
-    # Rimuove il newline finale
     new_content_html = new_content_html.strip()
 
-    # 3. Trova e sostituisci il blocco dinamico
     start_tag = ''
     end_tag = ''
 
@@ -151,11 +139,8 @@ def update_index_html(articles):
         print("⚠️ Attenzione: I tag di sostituzione dinamica non sono presenti in index.html.")
         return
 
-    # Crea il blocco completo con i tag
     replacement_block = f'{start_tag}\n{new_content_html}\n{end_tag}'
     
-    # Usa un'espressione regolare per la sostituzione (inclusi tutti i contenuti tra i tag)
-    # re.DOTALL permette all'espressione di attraversare le nuove righe
     updated_content = re.sub(
         r'.*?', 
         replacement_block, 
@@ -163,7 +148,6 @@ def update_index_html(articles):
         flags=re.DOTALL
     )
 
-    # 4. Scrivi il contenuto aggiornato
     try:
         with open(INDEX_HTML_PATH, 'w', encoding='utf-8') as f:
             f.write(updated_content)
@@ -174,10 +158,8 @@ def update_index_html(articles):
 def main():
     """Funzione principale per l'esecuzione."""
     
-    # Tenta prima il feed RSS
     articles = parse_rss()
     
-    # Se il feed RSS fallisce o è vuoto, usa lo scraping di fallback
     if not articles:
         articles = scraping_fallback()
 
