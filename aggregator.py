@@ -53,4 +53,34 @@ else:
     print("⚪ Nessun nuovo articolo trovato")
 
 # Salva i file aggiornati
-with open(feed_path, "w", encoding="utf-8") as f_
+with open(feed_path, "w", encoding="utf-8") as f:
+    json.dump(articles, f, ensure_ascii=False, indent=2)
+
+with open(storico_path, "w", encoding="utf-8") as f:
+    json.dump(storico, f, ensure_ascii=False, indent=2)
+
+# Genera HTML
+html_content = ""
+for art in sorted(storico, key=lambda x: x["published"], reverse=True):
+    html_content += f"""
+    <article>
+      <div class='title'>{art['title_it']}</div>
+      <div class='date'>{art['published']}</div>
+      <a href='{art['link']}' target='_blank'>Leggi / Watch</a>
+    </article>
+    """
+
+# Legge template
+with open(index_path, "r", encoding="utf-8") as f:
+    template = f.read()
+
+# Inserisce contenuto
+template = template.replace(
+    "<!-- Gli articoli saranno generati automaticamente dallo script Python -->",
+    html_content
+)
+
+with open(index_path, "w", encoding="utf-8") as f:
+    f.write(template)
+
+print("✅ Aggiornamento completato con successo!")
