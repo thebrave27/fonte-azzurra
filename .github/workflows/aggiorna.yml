@@ -38,6 +38,7 @@ jobs:
             exit 1
           else
             echo "PAT_TOKEN presente, pronto per il push."
+          fi
 
       # 6️⃣ Commit e push su main solo se ci sono modifiche
       - name: Commit e push su main
