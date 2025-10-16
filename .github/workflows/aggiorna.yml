@@ -57,7 +57,8 @@ jobs:
             else
               # Push con GITHUB_TOKEN predefinito
               git push
-            fi        
+            fi
+            
             echo "Modifiche committate e pushati."
           else
             echo "Nessuna modifica da committare o pushati."
