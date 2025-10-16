@@ -2,7 +2,7 @@ name: Aggiorna Fonte Azzurra
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # ogni 6 ore
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,28 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      # 3️⃣ Installa dipendenze necessarie
       - name: Install dependencies
         run: |
           set -e
           python -m pip install --upgrade pip
           pip install feedparser beautifulsoup4 requests
 
-      # 4️⃣ Esegui aggregator.py
       - name: Esegui aggregator.py
-        run: python aggregator.py
+        run: |
+          set -e
+          python aggregator.py
 
-      # 5️⃣ Verifica PAT_TOKEN
       - name: Verifica PAT_TOKEN
         run: |
           set -e
@@ -42,7 +39,6 @@ jobs:
             echo "PAT_TOKEN presente, pronto per il push."
           fi
 
-      # 6️⃣ Commit e push su main solo se ci sono modifiche
       - name: Commit e push su main
         run: |
           set -e
